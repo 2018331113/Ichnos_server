@@ -82,7 +82,7 @@ const tenderaccountschema = new mongoose.Schema({
     email:String,
     t_phone:String,
     t_ads:String,
-    des: String,
+    t_des: String,
     project:String,
    
     
@@ -110,7 +110,7 @@ const tenderschema = new mongoose.Schema({
    email:String,
    t_phone:String,
    t_ads:String,
-   des: String,
+   t_des: String,
    budget:String,
    accpt:Boolean,
    
@@ -138,7 +138,8 @@ app.post("/createtenderid",async (req,res)=>{
             email:req.body.email,
             t_phone:req.body.t_phone,
             t_ads:req.body.t_ads,
-            des: req.body.des,
+            t_des: req.body.t_des,
+            project:"null"
            
             
 
@@ -160,7 +161,7 @@ app.post("/createtenderid",async (req,res)=>{
 
 
 //posting to vacant
-var p_id=1010;
+var p_id= Math.floor(100000 + Math.random() * 900000);
 
 app.post("/vacants",async (req,res)=>{
 
@@ -179,7 +180,7 @@ app.post("/vacants",async (req,res)=>{
             openingdate:req.body.openingdate,
             closingdate: req.body.closingdate,
             host:false,
-            fundstatus: req.body.fundstatus
+            fundstatus:"Not given"
 
         })
         const data = await newVacant.save();
@@ -204,7 +205,7 @@ app.post("/tenderlists",async (req,res)=>{
           const  t_phone= data11[0].t_phone;
           const  t_ads=data11[0].t_ads;
         //  const  budget =data11[0].t_budget;
-          const  des= data11[0].des;
+          const  des= data11[0].t_des;
 
     try {
         const newTender= new tenderdoc({
@@ -215,7 +216,7 @@ app.post("/tenderlists",async (req,res)=>{
             t_phone:t_phone,
             t_ads:t_ads,
             budget :b,
-            des:des,
+            t_des:des,
             accpt:0,
             
 
@@ -265,15 +266,15 @@ app.get("/get_tenderid",async (req,res)=>{
 //getting live detaisl against project_id
 
 app.get("/get_live",async (req,res)=>{
-  
+    const e=req.body.c_id;
+    const data22= tenderdoc.find({c_id:e});
+    console.log(data22);
+    const x= data22[0].p_id;
     try {
-        const result =await vacantdoc.find({p_id:req.body.p_id},
+         
 
-           
-            
-            
-            )
-        console.log(result)
+        const result= await vacantdoc.find({p_id:x});
+        console.log(result);
        if(result){
         res.status(200).json({result});
        }
@@ -282,6 +283,7 @@ app.get("/get_live",async (req,res)=>{
         res.status(404).send({message:error.message})
     }
 });
+
 
 
 
@@ -313,13 +315,14 @@ app.put("/hosting",async (req,res)=>{
             
             {
                 $set:{host:true}
+                
             }
             
             
             )
 
         
-        
+            console.log("hosted");
        if(result){
         res.status(200).json({sucess:true,
         message:'updated',
@@ -335,7 +338,7 @@ app.put("/hosting",async (req,res)=>{
 
 
 
-//get tender list and project details against project id
+//get tender list and project details 
 app.get("/get_tenderlists_project",async (req,res)=>{
 
     try {
@@ -367,7 +370,10 @@ app.get("/get_tenderlists_project",async (req,res)=>{
                   org: 1,
                   location:1,
                   type:1,
-                 /* _id:"$result._id",
+                  closingdate:1,
+                  openingdate:1,
+
+                  /* _id:"$result._id",
                   t_name:"$result.t_name",
                   t_phone:"$result.t_phone",
                   email:"$result.email",
@@ -516,7 +522,7 @@ app.put("/fund",async (req,res)=>{
                  
                
                 {  
-                    $set:{fundstatus:"Fund Accepted"}
+                    $set:{fundstatus:"Accepted"}
                 }
                 
                 
@@ -535,7 +541,7 @@ app.put("/fund",async (req,res)=>{
                  
                
                 {  
-                    $set:{fundstatus:"Fund Rejected"}
+                    $set:{fundstatus:"Rejected"}
                 }
                 
                 
@@ -603,14 +609,14 @@ app.get("/grantdetails",async (req,res)=>{
                 org: "$result.org",
                 location:"$result.location",
                 type:"$result.type",
-                startdate:"$result.openingdate",
-                enddate:"$result.closingdate",
+                openingdate:"$result.openingdate",
+                closingdate:"$result.closingdate",
                 _id:1,
                 t_name:1,
                 t_phone:1,
                 email:1,
                 t_ads:1,
-                des:1,
+                t_des:1,
                 budget:1,
 
                 fundstatus:"$result.fundstatus",
