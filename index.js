@@ -84,6 +84,7 @@ const tenderaccountschema = new mongoose.Schema({
     t_ads:String,
     t_des: String,
     project:String,
+    password:String
    
     
  
@@ -139,7 +140,8 @@ app.post("/createtenderid",async (req,res)=>{
             t_phone:req.body.t_phone,
             t_ads:req.body.t_ads,
             t_des: req.body.t_des,
-            project:"null"
+            project:"null",
+            password:req.body.password
            
             
 
@@ -263,17 +265,63 @@ app.get("/get_tenderid",async (req,res)=>{
 });
 
 
-//getting live detaisl against project_id
+//getting live detaisl against client id
 
 app.get("/get_live",async (req,res)=>{
-    const e=req.body.c_id;
-    const data22= tenderdoc.find({c_id:e});
-    console.log(data22);
-    const x= data22[0].p_id;
+    const c_id= req.query.c_id;
     try {
-         
+        
+        const result= await tenderdoc.aggregate([
+        
+          {
+            $match:{
+                accpt: true,
+                c_id:c_id
+                
+               
+            }
+          },
+          
+          
+          {  $lookup:{ 
 
-        const result= await vacantdoc.find({p_id:x});
+                from:'vacants',
+                localField:'p_id',
+                foreignField:'p_id',
+                as:"result"
+
+
+
+
+
+             }
+
+            },
+          {$unwind:"$result"} ,
+          {   
+            $project:{
+                p_id : "$result.p_id",
+                title : "$result.title",
+                des : "$result.des",
+                org: "$result.org",
+                location:"$result.location",
+                type:"$result.type",
+                openingdate:"$result.openingdate",
+                closingdate:"$result.closingdate",
+                _id:1,
+                t_name:1,
+                t_phone:1,
+                email:1,
+                t_ads:1,
+                t_des:1,
+                budget:1,
+
+                fundstatus:"$result.fundstatus",
+                
+            } 
+        }
+
+        ]);
         console.log(result);
        if(result){
         res.status(200).json({result});
@@ -448,7 +496,7 @@ app.put("/accept",async (req,res)=>{
             
             
         )
-        const data4 =await tenderaccountdoc.updateOne({c_id:req.body.client_id},
+        const data4 =await tenderaccountdoc.updateOne({_id:req.body.client_id},
             
             {
                 $set:{project:req.body.p_id}
@@ -581,6 +629,7 @@ app.get("/grantdetails",async (req,res)=>{
           {
             $match:{
                 accpt: true,
+
                
             }
           },
@@ -701,12 +750,43 @@ app.get("/grantdetails",async (req,res)=>{
     }
 })*/
 
+//Reject offer
+app.delete("/reject_offer",async (req,res)=>{
+        const k=req.body.c_id;
+        
+    try {
+        const result =await tenderdoc.deleteOne({c_id:k});
+        
+       if(result){
+        res.status(200).json(result);
+       }
+        
+    } catch (error) {
+        res.status(404).send({message:"Not found"})
+    }
+});
 
 
+//Auth
 
+app.get("/auth",async (req,res)=>{
+     const x = req.query.email;
+     const y= req.query.password;
 
-
-
+    try {
+        const result=await tenderaccountdoc.find({email:x});
+        const pass = result[0].password;
+       if(pass==y){
+        res.status(200).json({"success":true,"client_id":result[0]._id});
+       }
+       else{
+        res.status(404).send({"success":false})
+       }
+        
+    } catch (error) {
+        res.status(404).send({"success":false,"message":"Create Account!"})
+    }
+});
 
 
 
@@ -715,6 +795,7 @@ app.get('/',(req,res)=>{
     res.send("yo");
 }
 )
+
 
 
 
